@@ -74,7 +74,10 @@ public class TTGSnackbar: UIView {
 
     // MARK: -
     // MARK: Public property.
-
+    
+    /// set the intended superview for this snackbar (leave nil to install on main window)
+    public dynamic var superView: UIView? = nil
+    
     /// Action callback.
     public dynamic var actionBlock: TTGActionBlock? = nil
 
@@ -214,6 +217,11 @@ public class TTGSnackbar: UIView {
         }
     }
 
+    /// Set to true to show activity indicator for any action
+    public dynamic var showActionActivity: Bool = false
+    /// Set to true to show post message for any action
+    public dynamic var showActionPostMessage: Bool = false
+
     /// Icon image
     public dynamic var icon: UIImage? = nil {
         didSet {
@@ -234,6 +242,7 @@ public class TTGSnackbar: UIView {
     private var iconImageView: UIImageView!
     private var messageLabel: UILabel!
     private var seperateView: UIView!
+    private var secondSeperateView: UIView!
     private var actionButton: UIButton!
     private var secondActionButton: UIButton!
     private var activityIndicatorView: UIActivityIndicatorView!
@@ -335,6 +344,15 @@ public class TTGSnackbar: UIView {
 
 public extension TTGSnackbar {
 
+    public func showActionMessage(message: String?) {
+        if let message = message {
+            dispatch_async(dispatch_get_main_queue()) {
+                () -> Void in
+                self.message = message
+            }
+        }
+    }
+    
     /**
      Show the snackbar.
      */
@@ -352,6 +370,7 @@ public extension TTGSnackbar {
         actionButton.hidden = actionText.isEmpty || actionBlock == nil
         secondActionButton.hidden = secondActionText.isEmpty || secondActionBlock == nil
         seperateView.hidden = actionButton.hidden
+        secondSeperateView.hidden = secondActionButton.hidden
         iconImageViewWidthConstraint?.constant = iconImageView.hidden ? 0 : TTGSnackbar.snackbarIconImageViewWidth
         actionButtonWidthConstraint?.constant = actionButton.hidden ? 0 : (secondActionButton.hidden ? TTGSnackbar.snackbarActionButtonMaxWidth : TTGSnackbar.snackbarActionButtonMinWidth)
         secondActionButtonWidthConstraint?.constant = secondActionButton.hidden ? 0 : (actionButton.hidden ? TTGSnackbar.snackbarActionButtonMaxWidth : TTGSnackbar.snackbarActionButtonMinWidth)
@@ -359,43 +378,49 @@ public extension TTGSnackbar {
         self.layoutIfNeeded()
 
         // Get windows to show
-        if let superView = UIApplication.sharedApplication().keyWindow {
-            superView.addSubview(self)
-
-            // Snackbar height constraint
-            heightConstraint = NSLayoutConstraint.init(item: self, attribute: .Height,
-                    relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: height)
-
-            // Left margin constraint
-            leftMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Left,
-                    relatedBy: .Equal, toItem: superView, attribute: .Left, multiplier: 1, constant: leftMargin)
-
-            // Right margin constraint
-            rightMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Right,
-                    relatedBy: .Equal, toItem: superView, attribute: .Right, multiplier: 1, constant: -rightMargin)
-
-            // Bottom margin constraint
-            bottomMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Bottom,
-                    relatedBy: .Equal, toItem: superview, attribute: .Bottom, multiplier: 1, constant: -bottomMargin)
-
-            // Avoid the "UIView-Encapsulated-Layout-Height" constraint conflicts
-            // http://stackoverflow.com/questions/25059443/what-is-nslayoutconstraint-uiview-encapsulated-layout-height-and-how-should-i
-            leftMarginConstraint?.priority = 999
-            rightMarginConstraint?.priority = 999
-
-            // Add constraints
-            self.addConstraint(heightConstraint!)
-            superView.addConstraint(leftMarginConstraint!)
-            superView.addConstraint(rightMarginConstraint!)
-            superView.addConstraint(bottomMarginConstraint!)
-
-            // Show
+        if let view = self.superView {
+            loadOnView(view)
+            showWithAnimation()
+        }
+        else if let view = UIApplication.sharedApplication().keyWindow {
+            loadOnView(view)
             showWithAnimation()
         } else {
             fatalError("TTGSnackbar needs a keyWindows to display.")
         }
     }
-
+    
+    private func loadOnView(superView: UIView) {
+        superView.addSubview(self)
+        
+        // Snackbar height constraint
+        heightConstraint = NSLayoutConstraint.init(item: self, attribute: .Height,
+                                                   relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: height)
+        
+        // Left margin constraint
+        leftMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Left,
+                                                       relatedBy: .Equal, toItem: superView, attribute: .Left, multiplier: 1, constant: leftMargin)
+        
+        // Right margin constraint
+        rightMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Right,
+                                                        relatedBy: .Equal, toItem: superView, attribute: .Right, multiplier: 1, constant: -rightMargin)
+        
+        // Bottom margin constraint
+        bottomMarginConstraint = NSLayoutConstraint.init(item: self, attribute: .Bottom,
+                                                         relatedBy: .Equal, toItem: superview, attribute: .Bottom, multiplier: 1, constant: -bottomMargin)
+        
+        // Avoid the "UIView-Encapsulated-Layout-Height" constraint conflicts
+        // http://stackoverflow.com/questions/25059443/what-is-nslayoutconstraint-uiview-encapsulated-layout-height-and-how-should-i
+        leftMarginConstraint?.priority = 999
+        rightMarginConstraint?.priority = 999
+        
+        // Add constraints
+        self.addConstraint(heightConstraint!)
+        superView.addConstraint(leftMarginConstraint!)
+        superView.addConstraint(rightMarginConstraint!)
+        superView.addConstraint(bottomMarginConstraint!)
+    }
+    
     /**
      Show.
      */
@@ -455,6 +480,22 @@ public extension TTGSnackbar {
         }
     }
 
+    public func dismissWithPostMessage(message: String?) {
+        if let msg = message {
+            dispatch_async(dispatch_get_main_queue()) {
+                self.activityIndicatorView.stopAnimating()
+                self.message = msg
+            }
+            // Dismiss manually after 1.5 seconds
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(1.5 * Double(NSEC_PER_SEC))), dispatch_get_main_queue()) {
+                () -> Void in
+                self.dismiss()
+            }
+        } else {
+            self.dismiss()
+        }
+    }
+    
     /**
      Dismiss.
      
@@ -464,8 +505,10 @@ public extension TTGSnackbar {
         invalidDismissTimer()
         activityIndicatorView.stopAnimating()
 
+        guard let _ = superview else { return }
+        
         let superViewWidth = CGRectGetWidth((superview?.frame)!)
-
+    
         if !animated {
             dismissBlock?(snackbar: self)
             self.removeFromSuperview()
@@ -495,16 +538,21 @@ public extension TTGSnackbar {
         }
 
         self.setNeedsLayout()
+        
         UIView.animateWithDuration(animationDuration, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0.2, options: .CurveEaseIn,
                 animations: {
                     () -> Void in
                     animationBlock?()
                     self.layoutIfNeeded()
-                }) {
-            (finished) -> Void in
-            self.dismissBlock?(snackbar: self)
-            self.removeFromSuperview()
-        }
+                }, completion: {
+                    (finished) -> Void in
+                    self.dismissBlock?(snackbar: self)
+                    
+                    // FIXME: for some reason, calling self.removeFromSuperview() without delay causes the animation to not show
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(self.animationDuration * Double(NSEC_PER_SEC))), dispatch_get_main_queue()) {
+                        self.removeFromSuperview()
+                    }
+            })
     }
 
     /**
@@ -573,17 +621,23 @@ private extension TTGSnackbar {
         seperateView.backgroundColor = UIColor.grayColor()
         self.addSubview(seperateView)
 
+        secondSeperateView = UIView()
+        secondSeperateView.translatesAutoresizingMaskIntoConstraints = false
+        secondSeperateView.backgroundColor = UIColor.grayColor()
+        self.addSubview(secondSeperateView)
+        
         activityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: .White)
         activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false
         activityIndicatorView.stopAnimating()
         self.addSubview(activityIndicatorView)
 
         // Add constraints
+        let secondSeperateConstraints = secondSeperateView.hidden ? "0" : "2-[secondSeperateView(0.5)]-2"
         let hConstraints: [NSLayoutConstraint] = NSLayoutConstraint.constraintsWithVisualFormat(
-        "H:|-2-[iconImageView]-2-[messageLabel]-2-[seperateView(0.5)]-2-[actionButton]-0-[secondActionButton]-4-|",
+        "H:|-4-[iconImageView]-2-[messageLabel]-2-[seperateView(0.5)]-2-[actionButton]-\(secondSeperateConstraints)-[secondActionButton]-4-|",
                 options: NSLayoutFormatOptions(rawValue: 0),
                 metrics: nil,
-                views: ["iconImageView": iconImageView, "messageLabel": messageLabel, "seperateView": seperateView, "actionButton": actionButton, "secondActionButton": secondActionButton])
+                views: ["iconImageView": iconImageView, "messageLabel": messageLabel, "seperateView": seperateView, "actionButton": actionButton, "secondSeperateView": secondSeperateView, "secondActionButton": secondActionButton])
 
         let vConstraintsForIconImageView: [NSLayoutConstraint] = NSLayoutConstraint.constraintsWithVisualFormat(
         "V:|-2-[iconImageView]-2-|",
@@ -603,6 +657,13 @@ private extension TTGSnackbar {
                 metrics: nil,
                 views: ["seperateView": seperateView])
 
+        let vConstraintsForsecondSeperateView: [NSLayoutConstraint] = NSLayoutConstraint.constraintsWithVisualFormat(
+            "V:|-4-[secondSeperateView]-4-|",
+            options: NSLayoutFormatOptions(rawValue: 0),
+            metrics: nil,
+            views: ["secondSeperateView": secondSeperateView])
+
+        
         let vConstraintsForActionButton: [NSLayoutConstraint] = NSLayoutConstraint.constraintsWithVisualFormat(
         "V:|-0-[actionButton]-0-|",
                 options: NSLayoutFormatOptions(rawValue: 0),
@@ -647,6 +708,7 @@ private extension TTGSnackbar {
         self.addConstraints(vConstraintsForIconImageView)
         self.addConstraints(vConstraintsForMessageLabel)
         self.addConstraints(vConstraintsForSeperateView)
+        self.addConstraints(vConstraintsForsecondSeperateView)
         self.addConstraints(vConstraintsForActionButton)
         self.addConstraints(vConstraintsForSecondActionButton)
         self.addConstraints(vConstraintsForActivityIndicatorView)
@@ -668,14 +730,15 @@ private extension TTGSnackbar {
         button == actionButton ? actionBlock?(snackbar: self) : secondActionBlock?(snackbar: self)
 
         // Show activity indicator
-        if duration == .Forever && actionButton.hidden == false {
+        if (duration == .Forever || showActionActivity || showActionPostMessage) && actionButton.hidden == false {
             actionButton.hidden = true
             secondActionButton.hidden = true
             seperateView.hidden = true
+            secondSeperateView.hidden = true
             activityIndicatorView.hidden = false
             activityIndicatorView.startAnimating()
         } else {
-            dismissAnimated(true)
+            dismiss()
         }
     }
 }
