@@ -1,29 +1,35 @@
 # TTGSnackbar
 A Swift based implementation of the Android Snackbar for iOS
 
+[![Build Status](https://travis-ci.org/zekunyan/TTGSnackbar.svg?branch=master)](https://travis-ci.org/zekunyan/TTGSnackbar)
 [![Version](https://img.shields.io/cocoapods/v/TTGSnackbar.svg?style=flat)](https://github.com/zekunyan/TTGSnackbar)
 [![License](https://img.shields.io/cocoapods/l/TTGSnackbar.svg?style=flat)](https://github.com/zekunyan/TTGSnackbar)
 [![Platform](https://img.shields.io/cocoapods/p/TTGSnackbar.svg?style=flat)](https://github.com/zekunyan/TTGSnackbar)
+[![Swift3](https://img.shields.io/badge/Swift-3-orange.svg)](https://developer.apple.com/swift)
+[![Apps Using](https://img.shields.io/badge/Apps%20Using-%3E%20416-blue.svg)](https://github.com/zekunyan/TTGSnackbar)
+[![Total Download](https://img.shields.io/badge/Total%20Download-%3E%2020329-blue.svg)](https://github.com/zekunyan/TTGSnackbar)
 
-![Screenshot](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_8.gif)
+![Screenshot](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/screen_shot.png)
+
+# Gif
+
+![Screenshot](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_example.gif)
 
 # About
-TTGSnackbar is useful for showing a brief message at the bottom of the screen with an action button.  
-It appears above all other elements on screen and only one can be displayed at a time.  
+TTGSnackbar is useful for showing a brief message at bottom or top of the screen with one or two action button.  
+It appears above all other elements on screen.  
 It disappears after a timeout or after user click the action button.
 
 # Installation
 ### Requirement
-Swift 2.2  
+Swift 3  
+Xcode 8  
 iOS 8+
 
 ### CocoaPods
 You can use [CocoaPods](http://cocoapods.org) to install `TTGSnackbar` by adding it to your `Podfile`:
 
 ```ruby
-platform :ios, '8.0'
-use_frameworks!
-
 pod "TTGSnackbar"
 ```
 
@@ -42,13 +48,13 @@ import TTGSnackbar
 
 # Usage
 ## Show a simple message
-![Example](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_2.png)
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_1.png)
 ```
 let snackbar = TTGSnackbar.init(message: "Message", duration: .Short)
 snackbar.show()
 ```
 ## Show a simple message with an action button
-![Example](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_3.png)
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_2.png)
 ```
 let snackbar = TTGSnackbar.init(message: "Message", duration: .Middle, actionText: "Action")
 { (snackbar) -> Void in
@@ -58,7 +64,7 @@ snackbar.show()
 ```
 
 ## Show a simple message with a long running action
-![Example](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_5.png)
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_3.png)
 ```
 let snackbar = TTGSnackbar.init(message: "Message", duration: .Forever, actionText: "Action")
 { (snackbar) -> Void in
@@ -72,7 +78,7 @@ snackbar.show()
 ```
 
 ## Show a simple message with two action buttons
-![Example](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_9.png)
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_4.png)
 ```
 let snackbar: TTGSnackbar = TTGSnackbar.init(message: "Two actions !", duration: .Long)
 
@@ -90,12 +96,26 @@ snackbar.show()
 ```
 
 ## Show a simple message with an icon image
-![Example](http://7nj2iz.com1.z0.glb.clouddn.com/TTGSnackbar_10.jpg)
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_5.jpg)
 ```
 let snackbar: TTGSnackbar = TTGSnackbar.init(message: "Two actions !", duration: .Long)
 
 // Add icon image
 snackbar.icon = UIImage.init(named: "emoji_cool_small")
+
+snackbar.show()
+```
+
+## Show custom content view in snackbar
+![Example](https://github.com/zekunyan/TTGSnackbar/raw/master/Resources/snackbar_6.png)
+```
+let snackbar: TTGSnackbar = TTGSnackbar.init(message: "", duration: .Long)
+
+// Get custom content view
+let customContentView = UINib.init(nibName: "CustomView", bundle:Bundle.main).instantiate(withOwner: nil, options: nil).first as! UIView?
+
+// Set custom content view
+snackbar.customContentView = customContentView
 
 snackbar.show()
 ```
@@ -149,7 +169,7 @@ public typealias TTGDismissBlock = (snackbar: TTGSnackbar) -> Void
 ### Animation type
 `animationType: TTGSnackbarAnimationType` defines the style of snackbar when it show and dismiss.  
 
-`TTGSnackbarAnimationType` : `FadeInFadeOut`, `SlideFromBottomToTop`, `SlideFromBottomBackToBottom`, `SlideFromLeftToRight` and `SlideFromRightToLeft`.
+`TTGSnackbarAnimationType` : `FadeInFadeOut`, `SlideFromBottomToTop`, `SlideFromBottomBackToBottom`, `SlideFromLeftToRight`,  `SlideFromRightToLeft`, `SlideFromTopToBottom` and `SlideFromTopBackToTop`.
 
 The default value of `animationType` is `SlideFromBottomBackToBottom`, which is the same as Snackbar in Android.
 
@@ -157,7 +177,10 @@ The default value of `animationType` is `SlideFromBottomBackToBottom`, which is 
 `animationDuration: NSTimeInterval` defines the duration of show and hide animation.
 
 ### Margins
-`leftMargin: CGFloat`, `rightMargin: CGFloat` and `bottomMargin: CGFloat` define the margins of snackbar.
+`leftMargin: CGFloat`, `rightMargin: CGFloat`, `topMargin: CGFloat` and `bottomMargin: CGFloat` defines the margins of snackbar
+
+### Padding (Content inset)
+`contentInset: UIEdgeInsets` defines the padding(content inset) of content in the snackbar. Default is `UIEdgeInsets.init(top: 0, left: 4, bottom: 0, right: 4)`.
 
 ### Snackbar height
 `height: CGFloat` defines the height of snackbar.
@@ -170,6 +193,15 @@ The default value of `animationType` is `SlideFromBottomBackToBottom`, which is 
 
 ### Icon image content mode
 `iconContentMode: UIViewContentMode` defines the content mode of icon imageView.
+
+### [New!] Custom container view
+`containerView: UIView` defines the custom container(super) view for snackbar to show.
+
+### [New!] Custom content view
+`customContentView: UIView?` defines the custom content view to show in the snackbar.
+
+### Separator line view background color
+`separateViewBackgroundColor: UIColor = UIColor.gray` defines the separator line color.
 
 # Contact me
 zekunyan@163.com
