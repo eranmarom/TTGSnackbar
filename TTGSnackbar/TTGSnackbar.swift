@@ -601,7 +601,7 @@ public extension TTGSnackbar {
         invalidDismissTimer()
         activityIndicatorView.stopAnimating()
 
-        let superViewWidth = (superview?.frame)!.width
+        let superViewWidth = (superview?.frame)?.width ?? 0
 
         if !animated {
             dismissBlock?(self)
@@ -726,7 +726,7 @@ private extension TTGSnackbar {
         secondSeperateView = UIView()
         secondSeperateView.translatesAutoresizingMaskIntoConstraints = false
         secondSeperateView.backgroundColor = UIColor.gray
-        self.addSubview(secondSeperateView)
+        contentView.addSubview(secondSeperateView)
         
         activityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: .white)
 
